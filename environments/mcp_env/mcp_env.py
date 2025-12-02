@@ -74,10 +74,14 @@ class MCPEnv(ToolEnv):
         self._init_kwargs = kwargs
         self._max_turns = max_turns
 
-        super().__init__(tools=[], max_turns=max_turns, error_formatter=error_formatter, **kwargs)
+        super().__init__(
+            tools=[], max_turns=max_turns, error_formatter=error_formatter, **kwargs
+        )
         # Start a persistent background event loop and connect synchronously
         self._bg_loop = asyncio.new_event_loop()
-        self._bg_thread = threading.Thread(target=self._run_loop, args=(self._bg_loop,), daemon=True)
+        self._bg_thread = threading.Thread(
+            target=self._run_loop, args=(self._bg_loop,), daemon=True
+        )
         self._bg_thread.start()
         fut = asyncio.run_coroutine_threadsafe(self._connect_servers(), self._bg_loop)
         fut.result()
@@ -86,7 +90,9 @@ class MCPEnv(ToolEnv):
         # cleanup on exit
         atexit.register(
             lambda: (
-                asyncio.run_coroutine_threadsafe(self.cleanup(), self._bg_loop).result(timeout=5),
+                asyncio.run_coroutine_threadsafe(self.cleanup(), self._bg_loop).result(
+                    timeout=5
+                ),
                 self._shutdown_loop(),
             )
         )
@@ -108,13 +114,17 @@ class MCPEnv(ToolEnv):
                 wrapper = MCPToolWrapper(server_config.name, tool, connection)
                 wrapper_tools.append(wrapper)
                 self.mcp_tools[wrapper.__name__] = wrapper
-                self.logger.info(f"Registered MCP tool: {wrapper.__name__} from server '{server_config.name}'")
+                self.logger.info(
+                    f"Registered MCP tool: {wrapper.__name__} from server '{server_config.name}'"
+                )
 
         self.tools = wrapper_tools
         self.oai_tools = [tool.to_oai_tool() for tool in wrapper_tools]
         self.tool_map = {tool.__name__: tool for tool in wrapper_tools}
 
-    async def call_tool(self, tool_name: str, tool_args: dict, tool_call_id: str, **kwargs) -> Message:
+    async def call_tool(
+        self, tool_name: str, tool_args: dict, tool_call_id: str, **kwargs
+    ) -> Message:
         if tool_name in self.tool_map:
             tool_wrapper = self.tool_map[tool_name]
             try:
@@ -149,7 +159,9 @@ class MCPEnv(ToolEnv):
         self._bg_thread.join(timeout=5)
 
 
-def load_environment(mcp_servers: list = EXA_FETCH_TOOLS, dataset=None, **kwargs) -> vf.Environment:
+def load_environment(
+    mcp_servers: list = EXA_FETCH_TOOLS, dataset=None, **kwargs
+) -> vf.Environment:
     """Load an MCPEnv environment with fetch server for testing."""
     dataset = dataset or Dataset.from_dict(
         {
